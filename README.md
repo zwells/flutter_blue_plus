@@ -215,10 +215,13 @@ Connects whenever your device is found.
 
 ```dart
 // enable auto connect
-//  - this function always returns immediately
-//  - you must listen to `device.connectionState` to know when connection occurs 
-//  - autoConnect is incompatible with mtu argument, so you must call requestMtu yourself
-await device.connect(mtu:null, autoConnect:true)
+//  - note: autoConnect is incompatible with mtu argument, so you must call requestMtu yourself
+await device.connect(autoConnect:true, mtu:null)
+
+// wait until connection
+//  - when using autoConnect, connect() always returns immediately, so we must
+//    explicity listen to `device.connectionState` to know when connection occurs 
+await device.connectionState.where((val) => val == BluetoothConnectionState.connected).first;
 
 // disable auto connect
 await device.disconnect()

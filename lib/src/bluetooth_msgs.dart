@@ -103,6 +103,7 @@ class BmScanAdvertisement {
   final String? advName;
   final bool connectable;
   final int? txPowerLevel;
+  final int? appearance; // not supported on iOS / macOS
   final Map<int, List<int>> manufacturerData;
   final Map<Guid, List<int>> serviceData;
   final List<Guid> serviceUuids;
@@ -115,6 +116,7 @@ class BmScanAdvertisement {
     required this.advName,
     required this.connectable,
     required this.txPowerLevel,
+    required this.appearance,
     required this.manufacturerData,
     required this.serviceData,
     required this.serviceUuids,
@@ -152,6 +154,7 @@ class BmScanAdvertisement {
       advName: json['adv_name'],
       connectable: json['connectable'] != null ? json['connectable'] != 0 : false,
       txPowerLevel: json['tx_power_level'],
+      appearance: json['appearance'],
       manufacturerData: manufacturerData,
       serviceData: serviceData,
       serviceUuids: serviceUuids,
@@ -705,9 +708,9 @@ class BmMtuChangedResponse {
   BmMtuChangedResponse({
     required this.remoteId,
     required this.mtu,
-    required this.success,
-    required this.errorCode,
-    required this.errorString,
+    this.success = true,
+    this.errorCode = 0,
+    this.errorString = "",
   });
 
   factory BmMtuChangedResponse.fromMap(Map<dynamic, dynamic> json) {
@@ -718,6 +721,16 @@ class BmMtuChangedResponse {
       errorCode: json['error_code'],
       errorString: json['error_string'],
     );
+  }
+
+  Map<dynamic, dynamic> toMap() {
+    final Map<dynamic, dynamic> data = {};
+    data['remote_id'] = remoteId.str;
+    data['mtu'] = mtu;
+    data['success'] = success ? 1 : 0;
+    data['error_code'] = errorCode;
+    data['error_string'] = errorString;
+    return data;
   }
 }
 

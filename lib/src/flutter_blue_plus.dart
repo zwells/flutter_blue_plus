@@ -437,31 +437,36 @@ class FlutterBluePlus {
       var r = BmConnectionStateResponse.fromMap(call.arguments);
       _connectionStates[r.remoteId] = r;
       if (r.connectionState == BmConnectionStateEnum.disconnected) {
-        // reset known mtu
-        _mtuValues.remove(r.remoteId); 
+        // push to mtu stream, if needed
+        if (_mtuValues.containsKey(r.remoteId)) {
+          var resp = BmMtuChangedResponse(remoteId: r.remoteId, mtu: 23);
+          _methodStream.add(MethodCall("OnMtuChanged", resp.toMap()));
+        }
 
-        // clear lastDescs so that 'isNotifying' is reset
-        _lastDescs.remove(r.remoteId); 
+        // clear mtu
+        _mtuValues.remove(r.remoteId);
 
-        // clear chr values, for api consistency
-        _lastChrs.remove(r.remoteId); 
+        // clear lastDescs (resets 'isNotifying')
+        _lastDescs.remove(r.remoteId);
 
-        // Note: to make FBP easier to use, we purposely 
-        // do not clear `knownServices` or `bondState`.
-        // to make FBP easier to use, we purposely do not clear knownServices,
-        // otherwise `servicesList` would be annoying to use.
-        // We also don't clear the `bondState` cache for faster performance.
+        // clear lastChrs (api consistency)
+        _lastChrs.remove(r.remoteId);
 
-        _deviceSubscriptions[r.remoteId]?.forEach((s) => s.cancel()); // cancel subscriptions
-        _deviceSubscriptions.remove(r.remoteId); // delete subscriptions
-        _mtuValues.remove(r.remoteId); // reset known mtu
-        _lastDescs.remove(r.remoteId); // clear lastDescs so that 'isNotifying' is reset
-        _lastChrs.remove(r.remoteId); // for api consistency, clear characteristic values
+        // cancel & delete subscriptions
+        _deviceSubscriptions[r.remoteId]?.forEach((s) => s.cancel());
+        _deviceSubscriptions.remove(r.remoteId);
+
+        // Note: to make FBP easier to use, we do not clear `knownServices`,
+        // otherwise `servicesList` would be more annoying to use. We also
+        // do not clear `bondState`, for faster performance.
 
         // autoconnect
-        for (DeviceIdentifier d in _autoConnect) {
-          if (_adapterStateNow == BmAdapterStateEnum.on) {
-            BluetoothDevice(remoteId: d).connect(autoConnect: true, mtu: null);
+        if (Platform.isAndroid == false) {
+          if (_autoConnect.contains(r.remoteId)) {
+            if (_adapterStateNow == BmAdapterStateEnum.on) {
+              var d = BluetoothDevice(remoteId: r.remoteId);
+              d.connect(autoConnect: true, mtu: null);
+            }
           }
         }
       }
@@ -738,6 +743,7 @@ class ScanResult {
 class AdvertisementData {
   final String advName;
   final int? txPowerLevel;
+  final int? appearance; // not supported on iOS / macOS
   final bool connectable;
   final Map<int, List<int>> manufacturerData; // key: manufacturerId
   final Map<Guid, List<int>> serviceData; // key: service guid
@@ -755,6 +761,7 @@ class AdvertisementData {
   AdvertisementData({
     required this.advName,
     required this.txPowerLevel,
+    required this.appearance,
     required this.connectable,
     required this.manufacturerData,
     required this.serviceData,
@@ -764,6 +771,7 @@ class AdvertisementData {
   AdvertisementData.fromProto(BmScanAdvertisement p)
       : advName = p.advName ?? "",
         txPowerLevel = p.txPowerLevel,
+        appearance = p.appearance,
         connectable = p.connectable,
         manufacturerData = p.manufacturerData,
         serviceData = p.serviceData,
@@ -774,6 +782,7 @@ class AdvertisementData {
     return 'AdvertisementData{'
         'advName: $advName, '
         'txPowerLevel: $txPowerLevel, '
+        'appearance: $appearance, '
         'connectable: $connectable, '
         'manufacturerData: $manufacturerData, '
         'serviceData: $serviceData, '
