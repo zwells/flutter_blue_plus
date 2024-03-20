@@ -1665,6 +1665,7 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
     NSData       *manufData      = advertisementData[CBAdvertisementDataManufacturerDataKey];
     NSArray      *serviceUuids   = advertisementData[CBAdvertisementDataServiceUUIDsKey];
     NSDictionary *serviceData    = advertisementData[CBAdvertisementDataServiceDataKey];
+    NSData       *rawData        = advertisementData[CBAdvertisementDataManufacturerDataKey];
 
     // Manufacturer Data
     NSDictionary* manufDataB = nil;
@@ -1725,6 +1726,7 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
     if (serviceUuidsB)         {map[@"service_uuids"] = serviceUuidsB;}
     if (serviceDataB)          {map[@"service_data"] = serviceDataB;}
     if (RSSI)                  {map[@"rssi"] = RSSI;}
+    if (rawData)               {map[@"raw_data"] = rawData;}
     return map;
 }
 
